@@ -40,12 +40,6 @@
 
 
 
-> \[!IMPORTANT\]
->
-> **Star Us**, You will receive all release notifications from GitHub without any delay ~ ⭐️
-
-
-
 ## News
 
 **[2024.10.1x]** 🌟Release GoR
@@ -64,6 +58,14 @@ pip install scikit-learn
 
 
 ## ⭐Experiments
+
+> \[!IMPORTANT\]
+>
+> Before running the experiment, please configure your API KEY
+
+
+
+
 
 
 
