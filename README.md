@@ -40,9 +40,8 @@
 
 ## News
 
-<!-- **[2024.10.1x]** 🌟Release AcademicEval -->
-**[2024.10.1x]** 🌟 GoR is released.
-<!-- **[2024.10.1x]** 🌟Release Thought Retriever -->
+**[2024.10.16]** 🌟 GoR is released.
+
 
 
 ## 📌Preliminary
@@ -139,20 +138,12 @@ python sum_eval.py --cuda 0 --file_name ./result/[DATASET].json
 
 
 
-
-
-## Acknowledgments
-
-x
-
-
-
 ## Citation
 
 ```bibtex
 @article{GoR,
   title={Graph of Records: Boosting Retrieval Augmented Generation for Long-context Summarization with Graphs},
-  author={Haozhen Zhang and Tao Feng and Jiaxuan You*},
+  author={Haozhen Zhang and Tao Feng and Jiaxuan You},
   journal={arXiv preprint arXiv:xxx},
   year={2024}
 }
