@@ -37,7 +37,7 @@
 <!-- ![Method](./figures/model.png) -->
 
 <div align="center">
-  <img src="./figures/model.png" width="600" alt="GoR">
+  <img src="./figures/model.png" width="700" alt="GoR">
 </div>
 
 
