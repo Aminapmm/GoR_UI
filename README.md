@@ -5,8 +5,8 @@
     <a href="https://ulab-uiuc.github.io/GoR/">
         <img alt="Build" src="https://img.shields.io/badge/Project-Page-blue">
     </a>
-    <a href="https://arxiv.org/abs/xxx">
-        <img alt="Build" src="https://img.shields.io/badge/arXiv-xxxx.xxxxx-red?logo=arxiv">
+    <a href="https://arxiv.org/abs/2410.11001">
+        <img alt="Build" src="https://img.shields.io/badge/arXiv-2410.11001-red?logo=arxiv">
     </a>
     <!-- <a href="xxx">
         <img alt="Build" src="https://img.shields.io/badge/Twitter-black?logo=X">
@@ -29,12 +29,16 @@
 
 <p align="center">
     <a href="https://ulab-uiuc.github.io/GoR/">🌐 Project Page</a> |
-    <a href="https://arxiv.org/abs/xxx">📜 arXiv</a>
+    <a href="https://arxiv.org/abs/2410.11001">📜 arXiv</a>
     <!-- <a href="xxx">📮 Twitter Post</a> -->
 <p>
 
 
-![Method](./figures/model.png)
+<!-- ![Method](./figures/model.png) -->
+
+<div align="center">
+  <img src="./figures/model.png" width="500" alt="GoR">
+</div>
 
 
 
@@ -144,7 +148,7 @@ python sum_eval.py --cuda 0 --file_name ./result/[DATASET].json
 @article{GoR,
   title={Graph of Records: Boosting Retrieval Augmented Generation for Long-context Summarization with Graphs},
   author={Haozhen Zhang and Tao Feng and Jiaxuan You},
-  journal={arXiv preprint arXiv:xxx},
+  journal={arXiv preprint arXiv:2410.11001},
   year={2024}
 }
 ```
