@@ -75,50 +75,49 @@ def set_seed(seed=42):
     torch.cuda.manual_seed_all(seed)
 
 
-def get_llm_response_via_api(prompt,
-                             API_BASE="https://api.together.xyz",
-                             API_KEY="[YOUR_API_KEY]",
-                             LLM_MODEL="mistralai/Mixtral-8x7B-Instruct-v0.1",
-                             TAU=1.0,
-                             TOP_P=1.0,
-                             N=1,
-                             SEED=42,
-                             MAX_TRIALS=5,
-                             TIME_GAP=5):
+import requests
+import time
+
+def get_llm_response_via_ollama(
+    prompt,
+    OLLAMA_HOST="http://localhost:11434",
+    LLM_MODEL="mistral:latest",
+    TAU=1.0,
+    TOP_P=1.0,
+    N=1,
+    SEED=42,  # Note: Ollama might not support `seed` or multiple responses yet
+    MAX_TRIALS=5,
+    TIME_GAP=5
+):
     '''
-    res = get_llm_response_via_api(prompt='hello')  # Default: TAU Sampling (TAU=1.0)
-    res = get_llm_response_via_api(prompt='hello', TAU=0)  # Greedy Decoding
-    res = get_llm_response_via_api(prompt='hello', TAU=0.5, N=2, SEED=None)  # Return Multiple Responses w/ TAU Sampling
+    res = get_llm_response_via_ollama(prompt='hello')  # Default: TAU Sampling
     '''
-    openai.api_base = API_BASE
-    openai.api_key = API_KEY
-    completion = None
+    url = f"{OLLAMA_HOST}/api/chat"
+    payload = {
+        "model": LLM_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": TAU,
+        "top_p": TOP_P,
+        "stream": False  # Set to True for streaming
+    }
+
+    response = None
     while MAX_TRIALS:
         MAX_TRIALS -= 1
         try:
-            completion = openai.ChatCompletion.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                n=N,
-                temperature=TAU,
-                top_p=TOP_P,
-                seed=SEED,
-            )
+            r = requests.post(url, json=payload)
+            r.raise_for_status()
+            response = r.json()
             break
         except Exception as e:
-            print(e)
+            print("Error:", e)
             print("Retrying...")
             time.sleep(TIME_GAP)
 
-    if completion is None:
-        raise Exception("Reach MAX_TRIALS={}".format(MAX_TRIALS))
-    contents = completion.choices
-    if len(contents) == 1:
-        return contents[0].message["content"]
-    else:
-        return [c.message["content"] for c in contents]
+    if response is None:
+        raise Exception(f"Reach MAX_TRIALS={MAX_TRIALS}")
+
+    return response.get("message", {}).get("content", "[No content returned]")
 
 
 if __name__ == '__main__':

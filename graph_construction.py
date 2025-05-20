@@ -160,6 +160,16 @@ if __name__ == '__main__':
     data = data[:MAX_NUM]
     check_path("./graph")
     for ind, sample in enumerate(data):
+
+        graph_path = f"./graph/{DATASET}_graph_{ind}.graphml"
+        dgl_path = f"./graph/{DATASET}_graph_{ind}.dgl"
+        training_data_path = f"./graph/{DATASET}_training_data_{ind}.pkl"
+
+        # Check if all output files exist (adjust as needed)
+        if os.path.exists(graph_path) and os.path.exists(dgl_path) and os.path.exists(training_data_path):
+            print(f"Sample {ind} already processed. Skipping.")
+            continue
+        
         # Due to budget constraints, we randomly select at most 400 samples for training and 30 samples for evaluation.
         # You can optionally create a dev set for hyper-parameter tuning
         all_doc_chunk_list = split_corpus_by_doc(dataset=DATASET, sample=sample, text_splitter=TEXT_SPLITTER)
