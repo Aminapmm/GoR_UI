@@ -7,8 +7,8 @@ from utils import show_time
 
 def get_dense_retriever(retriever):
     if retriever == 'contriever':
-        query_tokenizer = ctx_tokenizer = AutoTokenizer.from_pretrained('facebook/contriever')
-        query_encoder = ctx_encoder = AutoModel.from_pretrained('facebook/contriever')
+        query_tokenizer = ctx_tokenizer = AutoTokenizer.from_pretrained("facebook/contriever")
+        query_encoder = ctx_encoder = AutoModel.from_pretrained("facebook/contriever")
     else:
         raise Exception("Retriever Error")
 

@@ -78,46 +78,55 @@ def set_seed(seed=42):
 import requests
 import time
 
+import requests
+import json
+import time
+
 def get_llm_response_via_ollama(
     prompt,
-    OLLAMA_HOST="http://localhost:11434",
+    OLLAMA_HOST="http://localhost:11434/api/generate",
     LLM_MODEL="mistral:latest",
     TAU=1.0,
     TOP_P=1.0,
     N=1,
-    SEED=42,  # Note: Ollama might not support `seed` or multiple responses yet
-    MAX_TRIALS=5,
+    SEED=42,  # Not currently used in Ollama
+    MAX_TRIALS=1,
     TIME_GAP=5
 ):
-    '''
-    res = get_llm_response_via_ollama(prompt='hello')  # Default: TAU Sampling
-    '''
-    url = f"{OLLAMA_HOST}/api/chat"
-    payload = {
+    """
+    Example:
+        res = get_llm_response_via_ollama(prompt='hello')  # Default: non-streaming request
+    """
+    payload = json.dumps({
         "model": LLM_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
+        "prompt": prompt,
         "temperature": TAU,
         "top_p": TOP_P,
-        "stream": False  # Set to True for streaming
+        "stream": False
+    })
+
+    headers = {
+        'Content-Type': 'application/json'
     }
 
     response = None
     while MAX_TRIALS:
         MAX_TRIALS -= 1
         try:
-            r = requests.post(url, json=payload)
+            r = requests.post(OLLAMA_HOST, headers=headers, data=payload)
             r.raise_for_status()
             response = r.json()
             break
         except Exception as e:
             print("Error:", e)
             print("Retrying...")
-            time.sleep(TIME_GAP)
+            #time.sleep(TIME_GAP)
 
     if response is None:
-        raise Exception(f"Reach MAX_TRIALS={MAX_TRIALS}")
+        raise Exception("Failed after maximum retry attempts.")
 
-    return response.get("message", {}).get("content", "[No content returned]")
+    return response.get("response", "[No content returned]")
+
 
 
 if __name__ == '__main__':

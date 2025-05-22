@@ -104,7 +104,7 @@ def record_graph_construction(query, support_materials, response, graph, dgl_gra
 
 
 def llm2query(prompt, tau=0.5):
-    content = get_llm_response_via_api(prompt=prompt,
+    content = get_llm_response_via_ollama(prompt=prompt,
                                        LLM_MODEL=LLM_MODEL,
                                        TAU=tau,
                                        SEED=SEED)
@@ -202,7 +202,7 @@ if __name__ == '__main__':
                                                     all_doc_chunk_list_embedding=all_doc_chunk_list_embedding,
                                                     retriever=RETRIEVER, query_tokenizer=QUERY_TOKENIZER,
                                                     query_encoder=QUERY_ENCODER, recall_chunk_num=RECALL_CHUNK_NUM)
-            response = get_llm_response_via_api(prompt=QUERY_PROMPT[DATASET].format_map({"question": user_query,
+            response = get_llm_response_via_ollama(prompt=QUERY_PROMPT[DATASET].format_map({"question": user_query,
                                                                                          "materials": "\n\n".join(
                                                                                              retrieved_chunks)}),
                                                 LLM_MODEL=LLM_MODEL,
