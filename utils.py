@@ -85,7 +85,7 @@ import time
 def get_llm_response_via_ollama(
     prompt,
     OLLAMA_HOST="http://localhost:11434/api/generate",
-    LLM_MODEL="mistral:latest",
+    LLM_MODEL="mixtral:8x7b",
     TAU=1.0,
     TOP_P=1.0,
     N=1,
@@ -125,7 +125,7 @@ def get_llm_response_via_ollama(
     if response is None:
         raise Exception("Failed after maximum retry attempts.")
 
-    return response.get("response", "[No content returned]")
+    return response.get("response", "[No content returned]").replace('\xa0', ' ').strip()
 
 
 

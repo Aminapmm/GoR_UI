@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     data = get_processed_data(dataset=DATASET, train=True)
     print("{} #Data: {}".format(show_time(), len(data)))
-    data = data[:400]
+    data = data[:200]
     query_embedding_list = []
     bert_score_list = []
     gs_list = []
@@ -95,8 +95,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
             continue
-        graph, dgl_graph = integrate_isolated(graph=graph, dgl_graph=dgl_graph, all_doc_chunk_list=all_doc_chunk_list,
-                                              all_doc_chunk_list_embedding=all_doc_chunk_list_embedding)
+        graph, dgl_graph = integrate_isolated(graph=graph, dgl_graph=dgl_graph, all_doc_chunk_list=all_doc_chunk_list, all_doc_chunk_list_embedding=all_doc_chunk_list_embedding)
         queries_embedding, bert_score = training_data_generation(graph=graph, training_data=training_data)
         gs_list.append(dgl_graph)
         query_embedding_list.append(queries_embedding)

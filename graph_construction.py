@@ -110,8 +110,10 @@ def llm2query(prompt, tau=0.5):
                                        SEED=SEED)
     content = content.split("\n")
     for ind, c in enumerate(content):
+        start_ind=0
         for start_ind in range(len(c)):
             if str(c[start_ind]).isalpha():
+                start_ind=ind
                 break
         content[ind] = c[start_ind:]
 
@@ -156,7 +158,7 @@ if __name__ == '__main__':
 
     data = get_processed_data(dataset=DATASET, train=TRAIN)
     print("{} #Data: {}".format(show_time(), len(data)))
-    MAX_NUM = 400 if TRAIN else 30
+    MAX_NUM = 200 if TRAIN else 30
     data = data[:MAX_NUM]
     check_path("./graph")
     for ind, sample in enumerate(data):
