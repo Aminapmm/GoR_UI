@@ -93,7 +93,7 @@ if __name__ == '__main__':
                                                 query_tokenizer=QUERY_TOKENIZER,
                                                 query_encoder=QUERY_ENCODER,
                                                 recall_chunk_num=RECALL_CHUNK_NUM)
-            response = get_llm_response_via_api(
+            response = get_llm_response_via_ollama(
                 prompt=QUERY_PROMPT_NORMAL[DATASET].format_map({"question": test_query["query"],
                                                                 "materials": "\n\n".join(
                                                                     retrieved_chunks)}),
