@@ -5,7 +5,7 @@ from bert_score import score
 from rouge_score import rouge_scorer
 
 from utils import *
-
+import csv, os
 
 def bert_score_eval(generate_response, ground_truth, device, batch_size=8):
     P, R, F = score(generate_response, ground_truth, model_type="microsoft/deberta-xlarge-mnli", device=device,
@@ -46,7 +46,7 @@ def rouge_eval(generate_response, ground_truth, type='rougeL'):
         return float(P), float(R), float(F)
 
 
-def response_eval(generate_responses, ground_truthes):
+def response_eval(generate_responses, ground_truthes, dataset_name="booksum"):
     metric_list = []
     for ind, (generate_response, ground_truth) in enumerate(tqdm(zip(generate_responses, ground_truthes))):
         metrics = dict()
@@ -63,6 +63,21 @@ def response_eval(generate_responses, ground_truthes):
         all_metrics[key] = {kk: float(np.mean([vv[key][kk] for vv in metric_list])) for kk in
                             metric_list[0][key].keys()}
 
+
+    # ==== SAVE TO CSV with dataset_name as 'index' ====
+    csv_filename = 'evaluation_metrics.csv'
+    with open(csv_filename, "a", newline="") as csvfile:  # 'a' for append mode, so you can store multiple datasets
+        writer = csv.writer(csvfile)
+        # Write header only if file is empty
+        if csvfile.tell() == 0:
+            writer.writerow(["Dataset", "ROUGE-L", "ROUGE-1", "ROUGE-2"])
+        writer.writerow([
+            dataset_name.capitalize(),
+            all_metrics["ROUGE-L"]["F"],
+            all_metrics["ROUGE-1"]["F"],
+            all_metrics["ROUGE-2"]["F"],
+        ])
+    # =====================
     print("\n")
     print(text_wrap("=" * 50 + "Final Evaluation" + "=" * 50))
     print_metrics(all_metrics)
@@ -89,4 +104,6 @@ if __name__ == '__main__':
         generate_responses.append(v["response"])
         ground_truthes.append(v["gt"])
 
-    response_eval(generate_responses=generate_responses, ground_truthes=ground_truthes)
+    import os
+
+    response_eval(generate_responses=generate_responses, ground_truthes=ground_truthes, dataset_name=os.path.basename(FILE_NAME).split(".")[0])
