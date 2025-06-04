@@ -172,6 +172,15 @@ if __name__ == '__main__':
             if os.path.exists(graph_path) and os.path.exists(dgl_path) and os.path.exists(training_data_path):
                 print(f"Sample {ind} already processed. Skipping.")
                 continue
+
+        else:
+            graph_path = f"./graph/{DATASET}_test_graph_{ind}.graphml"
+            dgl_path = f"./graph/{DATASET}_test_graph_{ind}.dgl"
+    
+            # Check if all output files exist (adjust as needed)
+            if os.path.exists(graph_path) and os.path.exists(dgl_path):
+                print(f"Sample {ind} already processed. Skipping.")
+                continue
         
         # Due to budget constraints, we randomly select at most 400 samples for training and 30 samples for evaluation.
         # You can optionally create a dev set for hyper-parameter tuning
