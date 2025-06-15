@@ -7,6 +7,7 @@ from dgl.nn.pytorch import JumpingKnowledge
 
 from utils import *
 
+from torch.utils.tensorboard import SummaryWriter
 
 class GAT(nn.Module):
     def __init__(self, in_dim, h_feats, dropout, attn_drop, n_head=4, num_layer=2):
@@ -142,6 +143,8 @@ def train_gor(train_dataloader):
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     scheduler = lambda step: (1 + np.cos((step) * np.pi / num_steps)) * 0.5
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=scheduler)
+    writer = SummaryWriter(log_dir=f"runs/{DATASET}")  # <--- Add this line
+
     for e in range(MAX_EPOCH):
         model.train()
         epoch_loss = 0
@@ -163,6 +166,14 @@ def train_gor(train_dataloader):
                                                                                      train_dataloader)), float(
                 entropy_loss / len(train_dataloader))))
 
+        #tracking metrics using Tensorboard
+        avg_loss = float(epoch_loss / len(train_dataloader))
+        avg_entropy = float(entropy_loss / len(train_dataloader))
+        writer.add_scalar('Loss/train', avg_loss, e)
+        writer.add_scalar('Entropy/train', avg_entropy, e)
+    
+    writer.close()
+    
     check_path("./weights")
     torch.save(model.state_dict(), "./weights/{}.pth".format(DATASET))
 
