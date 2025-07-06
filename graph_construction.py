@@ -36,13 +36,33 @@ def mem_retrieval(mem_chunk_embedding, all_doc_chunk_list, all_doc_chunk_list_em
         if chunk not in mem_chunk_list:
             mem_chunk_list.append(chunk)
             mem_chunk_embedding_copy.append(chunk_embedding)
+ 
+    #Step1: embed rag_query and mem_chunk_list using mini_lm
+    #Step2: run dense_retrieval on the embeddings from minilm to get top 12 chunks
+    #Step3: ...
+    #Pre-Retrieving
+    PRE_RETRIEVER = 'minilm'
+    DEVICE = get_device(int(0))
+
+    FAST_QUERY_TOKENIZER, FAST_CTX_TOKENIZER, FAST_QUERY_ENCODER, FAST_CTX_ENCODER = get_dense_retriever(PRE_RETRIEVER)
+    FAST_QUERY_ENCODER = FAST_QUERY_ENCODER.to(DEVICE)
+    FAST_CTX_ENCODER = FAST_CTX_ENCODER.to(DEVICE)
+
+    pre_rag_query_embedding = get_dense_embedding([rag_query], retriever = PRE_RETRIEVER, tokenizer=FAST_QUERY_TOKENIZER,
+                                                  model=FAST_QUERY_ENCODER)
+    pre_chunk_embedding = get_dense_embedding(mem_chunk_list, retriever =PRE_RETRIEVER , tokenizer=FAST_CTX_TOKENIZER,
+                                              model=FAST_CTX_ENCODER)
+    #pre_chunk_embedding = [i.to(DEVICE) for i in pre_chunk_embedding]
+    pre_retrieved_index , pre_retrieved_text_list = run_dense_retrieval(pre_rag_query_embedding, pre_chunk_embedding, mem_chunk_list, chunk_num=12)
+    
     rag_query_embedding = get_dense_embedding([rag_query], retriever=retriever, tokenizer=query_tokenizer,
                                               model=query_encoder)
+    
     mem_chunk_embedding_copy = [i.to(rag_query_embedding[0].device) for i in mem_chunk_embedding_copy]
     assert len(rag_query_embedding) == 1
     assert len(mem_chunk_embedding_copy) == len(mem_chunk_list)
-    retrieved_index, retrieved_text_list = run_dense_retrieval(rag_query_embedding, mem_chunk_embedding_copy,
-                                                               mem_chunk_list, chunk_num=recall_chunk_num)
+    top_k_chunk_embeddings = [mem_chunk_embedding_copy[i] for i in pre_retrieved_index]
+    retrieved_index, retrieved_text_list = run_dense_retrieval(rag_query_embedding, top_k_chunk_embeddings,                                                            pre_retrieved_text_list, chunk_num=recall_chunk_num)
 
     return retrieved_text_list, retrieved_index
 
@@ -82,7 +102,7 @@ def record_graph_construction(query, support_materials, response, graph, dgl_gra
     if len(non_dup_chunks) != 0:
         new_node_embedding = get_dense_embedding(non_dup_chunks, retriever=RETRIEVER, tokenizer=CTX_TOKENIZER,
                                                  model=CTX_ENCODER)
-        dgl_graph.add_nodes(num=len(non_dup_chunks), data={'feat': torch.vstack(new_node_embedding).cpu()})
+        dgl_graph.add_nodes(num=len(non_dup_chunks), data={'feat': new_node_embedding.cpu()})
     sub_training_data["response"] = [chunk_id_map[response]]
     sub_training_data["raw"] = []
     for chunk in support_materials:
