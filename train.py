@@ -18,14 +18,14 @@ class GAT(nn.Module):
         self.norm_layers = nn.ModuleList()
         self.act_layers = nn.ModuleList()
         self.gat_layers.append(
-            GATConv(in_dim, h_feats, num_heads=n_head, feat_drop=dropout, attn_drop=attn_drop, residual=False,
+            GATConv(in_dim, h_feats, num_heads=n_head, feat_drop=dropout, attn_drop=attn_drop, residual=True,
                     activation=None, allow_zero_in_degree=False))
         self.norm_layers.append(nn.BatchNorm1d(h_feats * n_head))
         self.act_layers.append(nn.PReLU(h_feats * n_head))
         for _ in range(num_layer - 1):
             self.gat_layers.append(
                 GATConv(h_feats * n_head, h_feats, num_heads=n_head, feat_drop=dropout, attn_drop=attn_drop,
-                        residual=False, activation=None, allow_zero_in_degree=False))
+                        residual=True, activation=None, allow_zero_in_degree=False))
             self.norm_layers.append(nn.BatchNorm1d(h_feats * n_head))
             self.act_layers.append(nn.PReLU(h_feats * n_head))
 
@@ -103,31 +103,44 @@ class GoR(nn.Module):
         cause OOM on our computing devices. Nevertheless, if you have enough GPU Memory, you can parallelize it to 
         enable faster training.
         """
+
+        #Added SoftCl as loss function to be used instead of infoNCE
+        def soft_cl(single_rep, query_embedding, bert_score):
+            from torch.nn import functional as F
+            bert_score = bert_score.to(x.device)
+
+            q = query_embedding.to(x.device)                # [Q, D]
+            node_rep_i = single_rep.to(x.device)            # [N, D]
+        
+            # Normalize for cosine sim (optional, but often helps)
+            q = F.normalize(q, dim=-1)                      # [Q, D]
+            node_rep_i = F.normalize(node_rep_i, dim=-1)    # [N, D]
+        
+            # Compute similarities: [Q, N]
+            sim_logits = torch.matmul(q, node_rep_i.T) / 0.05   # τ=0.1 → scale (softCL)
+        
+            # Get soft target weights (normalized BERT scores): [Q, N]
+            target = torch.softmax(bert_score / 0.2, dim=-1).detach()  # temp = 0.5
+        
+            # Compute numerator and denominator
+            sim_exp = torch.exp(sim_logits)                # [Q, N]
+            numerator = (sim_exp * target).sum(dim=-1)     # [Q]
+            denominator = sim_exp.sum(dim=-1)              # [Q]
+        
+            loss_cl = -torch.log(numerator / (denominator + 1e-8)).mean()
+        
+            # Optional: entropy regularization
+            entropy_ = torch.distributions.Categorical(
+                torch.softmax(sim_logits, dim=-1)
+            ).entropy().mean()
+
+            return loss_cl,entropy_
+        
         for ind, (single_rep, query_embedding, bert_score) in enumerate(
                 zip(node_rep, query_embedding_list, bert_score_list)):
-            bert_score = bert_score.to(x.device)
-            q = query_embedding.to(x.device)
-            _, bert_sorted_idx = bert_score.sort(dim=-1, descending=True)
-            p = single_rep[bert_sorted_idx[:, :1]]
-            n = single_rep[bert_sorted_idx[:, 1:]]
-            in_batch_neg_rep = torch.concat(node_rep[:ind] + node_rep[ind + 1:], dim=0).unsqueeze(0).repeat(p.shape[0],
-                                                                                                            1, 1)
-            n = torch.concat([n, in_batch_neg_rep], dim=1)
-            q = q.unsqueeze(1)
-            p_sim = torch.matmul(q, p.transpose(1, 2)).squeeze(1)
-            n_sim = torch.matmul(q, n.transpose(1, 2)).squeeze(1)
-            ranking_list = torch.concat([p_sim, n_sim], dim=-1)
-            rank_score_prediction = ranking_list[:, :bert_sorted_idx.shape[-1]]
-            rank_gt = 1 / torch.arange(1, 1 + rank_score_prediction.shape[-1]).view(1, -1).repeat(
-                rank_score_prediction.shape[0], 1).to(x.device)
-            ranking_loss_all += self.lambda_mrr_loss(rank_score_prediction, rank_gt)
-            p_sim = torch.exp(p_sim / 1.0).sum(dim=-1)
-            n_sim = torch.exp(n_sim / 1.0).sum(dim=-1)
-            loss_cl = -torch.log(p_sim / (p_sim + n_sim))
-            loss_cl = loss_cl.mean()
+            loss_cl, entropy = soft_cl(single_rep,query_embedding,bert_score)
             cl_loss_all += loss_cl
-            entropy_all += torch.distributions.Categorical(
-                torch.softmax(torch.matmul(q.squeeze(1), single_rep.T), dim=-1)).entropy().mean()
+            entropy_all += entropy
 
         cl_loss_all /= len(query_embedding_list)
         ranking_loss_all /= len(query_embedding_list)
