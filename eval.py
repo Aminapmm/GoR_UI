@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument("--hidden_dim", type=int, default=768)
     parser.add_argument("--num_layer", type=int, default=2)
     parser.add_argument("--n_head", type=int, default=4)
+    parser.add_argument("--eval_num", type=int , default=30)
     opt = parser.parse_args()
     DATASET = opt.dataset
     LLM_MODEL = opt.llm_model
@@ -55,6 +56,9 @@ if __name__ == '__main__':
     NUM_LAYER = opt.num_layer
     N_HEAD = opt.n_head
 
+    #Now User Can Specify the number of queries for evaluation
+    EVAL_NUM = opt.eval_num
+
     set_seed(int(SEED))
     DEVICE = get_device(int(opt.cuda))
 
@@ -66,7 +70,7 @@ if __name__ == '__main__':
 
     data = get_processed_data(dataset=DATASET, train=False)
     print("{} #Data: {}".format(show_time(), len(data)))
-    data = data[:30]
+    data = data[:EVAL_NUM]
     check_path("./graph")
     check_path("./result")
     result_recorder = dict()

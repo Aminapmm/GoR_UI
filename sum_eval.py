@@ -63,10 +63,9 @@ def response_eval(generate_responses, ground_truthes, dataset_name="booksum"):
         all_metrics[key] = {kk: float(np.mean([vv[key][kk] for vv in metric_list])) for kk in
                             metric_list[0][key].keys()}
 
-
-    # ==== SAVE TO CSV with dataset_name as 'index' ====
-    csv_filename = 'evaluation_metrics.csv'
-    with open(csv_filename, "a", newline="") as csvfile:  # 'a' for append mode, so you can store multiple datasets
+    #Result metrics are save into csv file
+    # ==== SAVE TO CSV with dataset_name as 'index' ==== 
+    with open(CSV_FILENAME, "a", newline="") as csvfile:  # 'a' for append mode, so you can store multiple datasets
         writer = csv.writer(csvfile)
         # Write header only if file is empty
         if csvfile.tell() == 0:
@@ -88,7 +87,9 @@ if __name__ == '__main__':
     parser.add_argument("--file_name", type=str, required=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--cuda", type=int, default=0)
+    parser.add_argument("--output", type=str, default="evaluation_metrics.csv")
     opt = parser.parse_args()
+    CSV_FILENAME = opt.output #parameter to specify filename for metrics result
     FILE_NAME = opt.file_name
     SEED = opt.seed
     set_seed(int(SEED))
