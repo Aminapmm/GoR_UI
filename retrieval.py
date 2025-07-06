@@ -9,6 +9,11 @@ def get_dense_retriever(retriever):
     if retriever == 'contriever':
         query_tokenizer = ctx_tokenizer = AutoTokenizer.from_pretrained("facebook/contriever")
         query_encoder = ctx_encoder = AutoModel.from_pretrained("facebook/contriever")
+
+    #Another Retriever model added here.
+    elif retriever == 'minilm':
+        query_tokenizer = ctx_tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/msmarco-MiniLM-L-6-v3')
+        query_encoder = ctx_encoder = AutoModel.from_pretrained('sentence-transformers/msmarco-MiniLM-L-6-v3')
     else:
         raise Exception("Retriever Error")
 
@@ -34,28 +39,53 @@ def split_batch(instructions, batch_size):
 def get_dense_embedding(instructions, retriever, tokenizer, model, trunc_len=512, batch_size=64):
     emb_list = []
     batch_instructions = split_batch(instructions, batch_size=batch_size)
+
     for sub_batch in batch_instructions:
+        inputs = tokenizer(
+            sub_batch,
+            padding=True,
+            truncation=True,
+            return_tensors='pt',
+            max_length=trunc_len
+        ).to(model.device)
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+
         if retriever == 'contriever':
-            inputs = tokenizer(sub_batch, padding=True, truncation=True, return_tensors='pt', max_length=trunc_len).to(model.device)
-            with torch.no_grad():
-                outputs = model(**inputs)
+            # Use mean pooling over last_hidden_state
             def mean_pooling(token_embeddings, mask):
-                token_embeddings = token_embeddings.masked_fill(~mask[..., None].bool(), 0.)
-                sentence_embeddings = token_embeddings.sum(dim=1) / mask.sum(dim=1)[..., None]
-                return sentence_embeddings
+                token_embeddings = token_embeddings.masked_fill(~mask[..., None].bool(), 0.0)
+                return token_embeddings.sum(dim=1) / mask.sum(dim=1)[..., None]
 
-            embeddings = mean_pooling(outputs[0], inputs['attention_mask'])
-            for e in embeddings:
-                emb_list.append(e)
+            embeddings = mean_pooling(outputs.last_hidden_state, inputs['attention_mask'])
+        
+        #according to minilm docs, there is no need for mean pooling 
+        elif retriever == 'minilm':
+            # Use pooler_output
+            embeddings = outputs.pooler_output  # shape: [batch_size, hidden_dim]
+
         else:
-            raise Exception("Error")
+            raise ValueError(f"Retriever '{retriever}' not supported.")
 
-    return emb_list
+        emb_list.append(embeddings.cpu())
+
+    # Stack all batches into final tensor [N, D]
+    return torch.cat(emb_list, dim=0)
+
 
 
 def dense_neiborhood_search(corpus_data, query_data, metric='ip', num=8):
-    xq = torch.vstack(query_data).cpu().numpy()
-    xb = torch.vstack(corpus_data).cpu().numpy()
+    if isinstance(query_data, list) :
+        xq = torch.vstack(query_data).cpu().numpy()
+    else:
+        xq = query_data.cpu().numpy()
+
+    if isinstance(corpus_data, list):
+        xb = torch.vstack(corpus_data).cpu().numpy()
+    else:
+        xb = corpus_data.cpu().numpy()
+        
     dim = xb.shape[1]
     if metric == 'l2':
         index = faiss.IndexFlatL2(dim)
